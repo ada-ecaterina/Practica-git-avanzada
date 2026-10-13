@@ -7,11 +7,16 @@ on:
     branches: [ develop ]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  validate-dev:
+    runs-on: self-hosted
     steps:
       - name: Checkout del código
         uses: actions/checkout@v4
-
-      - name: Ejecutar prueba
-        run: echo "¡El pipeline de CI se ha ejecutado con éxito!"
+      - name: Validar secret de desarrollo (Simulando fallo)
+        run: |
+          if [ "${{ secrets.DEV_TOKEN }}" == "DEV_SECRET_FAIL_123" ]; then
+            echo "Validación de DEV_TOKEN exitosa"
+          else
+            echo "Validación fallida: DEV_TOKEN no coincide"
+            exit 1
+          fi
