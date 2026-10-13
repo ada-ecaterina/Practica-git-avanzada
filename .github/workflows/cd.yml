@@ -1,0 +1,39 @@
+name: CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+  workflow_dispatch:
+
+jobs:
+  update-readme-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Incrementar versión en README para main
+        run: |
+          FECHA=$(date +'%Y-%m-%d %H:%M:%S')
+          echo "Desplegando en main - Fecha: $FECHA"
+          if grep -q "AppVersion" README.md; then
+            sed -i "s/AppVersion-[0-9]*/AppVersion-2 ($FECHA)/g" README.md
+          else
+            echo "AppVersion-2 ($FECHA)" >> README.md
+          fi
+
+  validate-prod:
+    needs: update-readme-prod
+    runs-on: self-hosted
+    steps:
+      - name: Validar secret de producción
+        run: |
+          if [ "${{ secrets.PROD_TOKEN }}" == "PROD_SECRET_OK" ]; then
+            echo "Validación de PROD_TOKEN exitosa"
+          else
+            echo "Validación fallida: PROD_TOKEN no coincide"
+            exit 1
+          fi
